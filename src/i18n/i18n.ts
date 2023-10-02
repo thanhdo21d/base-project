@@ -8,7 +8,6 @@ export const locals = {
   en: 'English',
   vi: 'Tiếng Việt'
 }
-
 const resources = {
   en: {
     home: HOME_PRODUCT_EN,
