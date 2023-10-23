@@ -91,3 +91,68 @@ app.get('/easy',async(req,res)=>{
      const All=await xlxs.find({});
      res.json(All)
 })
+
+
+
+
+
+
+
+import mongoose from 'mongoose';
+
+const QuestionOkSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+    },
+    easy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'easy',
+      },
+    ],
+    normal: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'normal',
+      },
+    ],
+    hard: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'hard',
+      },
+    ],
+    language: String,
+  },
+  { versionKey: false }
+);
+const Question = mongoose.model('Question', QuestionOkSchema);
+export default Question;
+
+
+
+
+
+
+
+
+
+
+import mongoose from 'mongoose';
+const EasySchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  question: [],
+  questionId: {
+    type: mongoose.Types.ObjectId,
+    ref: 'Question',
+    required: true,
+  },
+});
+
+const Easy = mongoose.model('Easy', EasySchema);
+
+export default Easy;
