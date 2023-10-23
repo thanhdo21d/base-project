@@ -1,0 +1,93 @@
+const  express =require('express');
+const cors =require("cors");
+const http= require('http')
+const mongoose =require( 'mongoose');
+const multer = require('multer');
+const ExcelJS = require('exceljs');
+const fs=require('fs')
+
+
+//excel
+const xlsx =require( 'xlsx');
+const { ppid } = require('process');
+require( "dotenv").config();
+
+mongoose.connect("mongodb://127.0.0.1:27017/test333")
+
+
+
+//setup
+const app=express();
+app.use(express.json());
+const server=http.createServer(app);
+
+const xlxs=require("./models/xlsx.js")
+
+const upload = multer({ dest: 'uploads/' });
+app.post('/upload', upload.single('file'),async  (req, res) => {
+     // tải lên file
+     console.log(req.file);
+     const workbook = xlsx.readFile(req.file.path);
+     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+     const jsonData = xlsx.utils.sheet_to_json(worksheet);
+     //ảnh
+     const workbook1 = new ExcelJS.Workbook();
+     const data = await workbook1.xlsx.readFile(req.file.path);
+     const worksheet1 = workbook1.worksheets[0];
+
+   
+     // In ra JSON và lưu 
+     var today = new Date();
+     var currentTimeInMillis = today.getTime();
+     for(let i = 1 ;i<jsonData.length;i++){
+          const find=await xlxs.findOne({question:jsonData[i].question});
+          var imgS=[];
+          var FirstImg=""
+          for (const image of worksheet1.getImages()) 
+          {
+               if(image.range.tl.nativeRow==i+1){
+                    
+                    const img = workbook1.model.media.find(m => m.index === image.imageId);
+                    const name=currentTimeInMillis+image.range.tl.nativeRow+'.'+image.range.tl.nativeCol+'.'+img.name+'.'+img.extension;
+                    fs.writeFileSync(`./imgs/${currentTimeInMillis}${image.range.tl.nativeRow}.${image.range.tl.nativeCol}.${img.name}.${img.extension}`, img.buffer);
+                    // imgS.push(name)
+                    if(image.range.tl.nativeCol==4)imgS.push(name);
+                    if(image.range.tl.nativeCol==5)FirstImg=name;
+                    if(image.range.tl.nativeCol==7)SecondImg=name;
+                    if(image.range.tl.nativeCol==9)ThirdImg=name;
+                    if(image.range.tl.nativeCol==11)FourthImg=name;
+
+                    
+
+               }
+               // console.log('processing image row', image.range.tl.nativeRow, 'col', image.range.tl.nativeCol, 'imageId', image.imageId);
+          }
+          let data={
+               question:jsonData[i]['__EMPTY'],
+               choose:[
+                    {q:jsonData[i]['__EMPTY_2'],img:FirstImg},
+                    {q:jsonData[i]['__EMPTY_3'],img:SecondImg},
+                    {q:jsonData[i]['__EMPTY_4'],img:ThirdImg},
+                    {q:jsonData[i]['__EMPTY_8'],img:FourthImg},
+
+               ],
+               answer:jsonData[i]['đáp án đúng'],
+               image:imgS,
+          }
+          // console.log(jsonData[i])
+          if(!find)new xlxs(data).save();//lưu dữ liệu vào db
+     }
+     res.json(jsonData);
+})
+//url ảnh
+app.use(express.static('imgs'));
+app.get("/",(req,res)=>{
+     res.sendFile(__dirname+"/index.html")
+})
+server.listen(8080,()=>{
+     console.log("listen on port:8080");
+})
+app.get('/easy',async(req,res)=>{
+     const All=await xlxs.find({});
+     res.json(All)
+})
