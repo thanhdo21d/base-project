@@ -156,3 +156,7 @@ const EasySchema = new mongoose.Schema({
 const Easy = mongoose.model('Easy', EasySchema);
 
 export default Easy;
+
+
+
+rate limit
